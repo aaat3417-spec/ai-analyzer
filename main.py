@@ -8,7 +8,7 @@ import httpx
 
 from collections import Counter
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTLMResponse
 import fitz  # PyMuPDF
 
 app = FastAPI()
@@ -48,6 +48,7 @@ class SecretEngine:
 
         for pattern in self.PATTERNS:
             found.extend(re.findall(pattern, text))
+
 
         tokens = re.findall(r"[A-Za-z0-9_\-]{20,}", text)
         strong = [t for t in tokens if calculate_entropy(t) > 4.5]
@@ -206,6 +207,84 @@ def check_password(password: str):
 @app.get("/health")
 def health():
     return {"status": "running"}
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """
+    <html>
+    <head>
+        <title>AI Analyzer</title>
+        <style>
+            body {
+                background: #0f172a;
+                color: white;
+                font-family: Arial;
+                text-align: center;
+                padding: 50px;
+            }
+            h1 { font-size: 50px; }
+            .box {
+                margin-top: 40px;
+                padding: 30px;
+                background: #1e293b;
+                border-radius: 12px;
+                display: inline-block;
+            }
+            button {
+                margin-top: 20px;
+                padding: 10px 20px;
+                background: #22c55e;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            pre {
+                background: #020617;
+                padding: 20px;
+                margin-top: 30px;
+                border-radius: 10px;
+                text-align: left;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>🚀 AI Analyzer</h1>
+        <p>Upload PDF and analyze</p>
+
+        <div class="box">
+            <input type="file" id="fileInput"><br>
+            <button onclick="uploadFile()">Analyze</button>
+        </div>
+
+        <pre id="result"></pre>
+
+        <script>
+            async function uploadFile() {
+                const fileInput = document.getElementById("fileInput");
+                const result = document.getElementById("result");
+
+                if (!fileInput.files.length) {
+                    alert("اختر ملف");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("file", fileInput.files[0]);
+
+                result.innerText = "⏳ جاري التحليل...";
+
+                const response = await fetch("/analyze", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+                result.innerText = JSON.stringify(data, null, 2);
+            }
+        </script>
+    </body>
+    </html>
+    """
 
 
 # ==============================
