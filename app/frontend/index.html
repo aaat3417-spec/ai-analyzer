@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Analyzer</title>
+<style>
+body { background:#0f172a; color:white; font-family:Arial; text-align:center; }
+.card { background:#1e293b; padding:20px; border-radius:12px; display:inline-block; }
+.item { margin:10px; padding:10px; background:#020617; border-radius:8px; }
+</style>
+</head>
+
+<body>
+
+<h1>AI Analyzer</h1>
+
+<div class="card">
+<input type="file" id="file">
+<br><br>
+<button onclick="upload()">Analyze</button>
+</div>
+
+<div id="output"></div>
+
+<script>
+async function upload(){
+    const f = document.getElementById("file").files[0];
+    const out = document.getElementById("output");
+
+    if(!f){ alert("select file"); return; }
+
+    const fd = new FormData();
+    fd.append("file", f);
+
+    out.innerHTML = "Processing...";
+
+    const res = await fetch("/analyze",{method:"POST",body:fd});
+    const data = await res.json();
+
+    let html = `
+    <div class="item">Entropy: ${data.analysis.entropy}</div>
+    <div class="item">Length: ${data.analysis.length}</div>
+    <div class="item">Emails: ${data.analysis.patterns.emails.length}</div>
+    <div class="item">URLs: ${data.analysis.patterns.urls.length}</div>
+    <div class="item">IPs: ${data.analysis.patterns.ips.length}</div>
+    `;
+
+    out.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
