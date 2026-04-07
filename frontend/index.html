@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Analyzer</title>
+</head>
+<body>
+
+<h1>Password Tool</h1>
+
+<button onclick="generate()">Generate Password</button>
+<p id="gen"></p>
+
+<input id="pass" placeholder="Enter password">
+<button onclick="check()">Check Strength</button>
+<p id="result"></p>
+
+<script>
+async function generate() {
+    let res = await fetch("/generate-password");
+    let data = await res.json();
+    document.getElementById("gen").innerText = data.generated_password;
+}
+
+async function check() {
+    let pass = document.getElementById("pass").value;
+    let res = await fetch(`/password-check?password=${pass}`);
+    let data = await res.json();
+    document.getElementById("result").innerText = data.strength;
+}
+</script>
+
+</body>
+</html>
