@@ -1,11 +1,11 @@
+from fastapi import FastAPI, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 import random
 import string
 import re
 import math
 import hashlib
 from collections import Counter
-
-from fastapi import FastAPI, UploadFile, File
 import fitz  # PyMuPDF
 
 app = FastAPI()
@@ -47,6 +47,74 @@ async def analyze_file(file: UploadFile = File(...)):
     ips = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", text)
 
     entropy = calculate_entropy(text)
-from fastapi.staticfiles import StaticFiles
+
+    return {
+        "emails": emails,
+        "urls": urls,
+        "ips": ips,
+        "entropy": round(entropy, 3),
+        "length": len(text),
+        "fingerprint": fingerprint(text)
+    }
+
+
+# ==============================
+# 🔐 PASSWORD SYSTEM
+# ==============================
+
+generated_passwords = set()
+
+def similarity(a: str, b: str) -> float:
+    same = sum(1 for x, y in zip(a, b) if x == y)
+    return same / max(len(a), len(b))
+
+
+@app.get("/generate-password")
+def generate_password():
+    length = 12
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+
+    while True:
+        password = "".join(random.choice(chars) for _ in range(length))
+
+        is_valid = True
+        for old in generated_passwords:
+            if similarity(password, old) > 0.2:
+                is_valid = False
+                break
+
+        if is_valid:
+            generated_passwords.add(password)
+            return {"password": password}
+
+
+@app.get("/password-check")
+def check_password(password: str):
+    score = 0
+
+    if len(password) >= 8:
+        score += 1
+    if any(c.islower() for c in password):
+        score += 1
+    if any(c.isupper() for c in password):
+        score += 1
+    if any(c.isdigit() for c in password):
+        score += 1
+    if any(c in "!@#$%^&*" for c in password):
+        score += 1
+
+    if score <= 2:
+        strength = "weak"
+    elif score == 3:
+        strength = "medium"
+    else:
+        strength = "strong"
+
+    return {"strength": strength}
+
+
+# ==============================
+# 🌐 FRONTEND
+# ==============================
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

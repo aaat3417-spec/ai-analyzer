@@ -5,7 +5,10 @@
 </head>
 <body>
 
-<h1>Password Tool</h1>
+<h1>AI Analyzer 🔥</h1>
+
+<!-- PASSWORD TOOL -->
+<h2>Password Tool</h2>
 
 <button onclick="generate()">Generate Password</button>
 <p id="gen"></p>
@@ -14,18 +17,55 @@
 <button onclick="check()">Check Strength</button>
 <p id="result"></p>
 
+<hr>
+
+<!-- PDF ANALYZER -->
+<h2>PDF Analyzer</h2>
+
+<input type="file" id="file">
+<button onclick="analyze()">Analyze PDF</button>
+
+<pre id="output"></pre>
+
 <script>
 async function generate() {
     let res = await fetch("/generate-password");
     let data = await res.json();
-    document.getElementById("gen").innerText = data.generated_password;
+
+    console.log(data);
+
+    document.getElementById("gen").innerText = data.password;
 }
 
 async function check() {
     let pass = document.getElementById("pass").value;
+
     let res = await fetch(`/password-check?password=${pass}`);
     let data = await res.json();
+
+    console.log(data);
+
     document.getElementById("result").innerText = data.strength;
+}
+
+async function analyze() {
+    let fileInput = document.getElementById("file");
+    let file = fileInput.files[0];
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    let res = await fetch("/analyze", {
+        method: "POST",
+        body: formData
+    });
+
+    let data = await res.json();
+
+    console.log(data);
+
+    document.getElementById("output").innerText =
+        JSON.stringify(data, null, 2);
 }
 </script>
 
