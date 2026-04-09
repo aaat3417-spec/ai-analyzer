@@ -1,72 +1,226 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Analyzer</title>
+<meta charset="UTF-8">
+<title>AI Analyzer</title>
+
+<style>
+body {
+    background: #0f0f0f;
+    color: white;
+    font-family: Arial;
+    text-align: center;
+}
+
+.container {
+    max-width: 500px;
+    margin: auto;
+    margin-top: 60px;
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 15px;
+}
+
+button {
+    background: #00c896;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+.bar {
+    height: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    background: #333;
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    width: 0%;
+    transition: 0.3s;
+}
+
+.result {
+    margin-top: 10px;
+    background: #111;
+    padding: 10px;
+    border-radius: 8px;
+}
+</style>
+
 </head>
+
 <body>
 
-<h1>AI Analyzer 🔥</h1>
+<div class="container">
 
-<!-- PASSWORD TOOL -->
-<h2>Password Tool</h2>
+<h1>🔥 AI Analyzer</h1>
 
-<button onclick="generate()">Generate Password</button>
-<p id="gen"></p>
+<h3>Password Tool</h3>
 
-<input id="pass" placeholder="Enter password">
-<button onclick="check()">Check Strength</button>
-<p id="result"></p>
+<button onclick="generatePassword()">Generate Password</button>
+
+<input id="password" placeholder="Enter password">
+
+<button onclick="copyPassword()">Copy</button>
+<button onclick="checkStrength()">Check Strength</button>
+
+<div class="bar">
+  <div id="fill" class="fill"></div>
+</div>
+
+<div id="strengthText" class="result"></div>
 
 <hr>
 
-<!-- PDF ANALYZER -->
-<h2>PDF Analyzer</h2>
+<h3>PDF Analyzer</h3>
 
-<input type="file" id="file">
-<button onclick="analyze()">Analyze PDF</button>
+<input type="file" id="fileInput">
 
-<pre id="output"></pre>
+<button onclick="analyzePDF()">Analyze</button>
+
+<div id="pdfResult" class="result"></div>
+
+</div>
 
 <script>
-async function generate() {
-    let res = await fetch("/generate-password");
-    let data = await res.json();
 
-    console.log(data);
-
-    document.getElementById("gen").innerText = data.password;
+// 🔐 Generate Password
+function generatePassword() {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let pass = "";
+    for (let i = 0; i < 12; i++) {
+        pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    document.getElementById("password").value = pass;
 }
 
-async function check() {
-    let pass = document.getElementById("pass").value;
+// 📋 Copy Password
+function copyPassword() {
+    const pass = document.getElementById("password").value;
 
-    let res = await fetch(`/password-check?password=${pass}`);
-    let data = await res.json();
+    if (!pass) {
+        alert("⚠️ لا يوجد كلمة مرور");
+        return;
+    }
 
-    console.log(data);
-
-    document.getElementById("result").innerText = data.strength;
+    navigator.clipboard.writeText(pass);
+    alert("تم النسخ ✅");
 }
 
-async function analyze() {
-    let fileInput = document.getElementById("file");
-    let file = fileInput.files[0];
+// 💪 Check Strength
+function checkStrength() {
+    const pass = document.getElementById("password").value;
+    const fill = document.getElementById("fill");
+    const text = document.getElementById("strengthText");
 
-    let formData = new FormData();
-    formData.append("file", file);
+    if (!pass) {
+        text.innerHTML = "⚠️ اكتب كلمة مرور أول";
+        return;
+    }
 
-    let res = await fetch("/analyze", {
-        method: "POST",
-        body: formData
-    });
+    let score = 0;
 
-    let data = await res.json();
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
 
-    console.log(data);
+    let time = "";
 
-    document.getElementById("output").innerText =
-        JSON.stringify(data, null, 2);
+    if (score <= 1) {
+        fill.style.width = "25%";
+        fill.style.background = "red";
+        time = "ثواني للاختراق 💀";
+        text.innerHTML = "❌ Weak<br>" + time;
+    } 
+    else if (score === 2) {
+        fill.style.width = "50%";
+        fill.style.background = "orange";
+        time = "دقائق";
+        text.innerHTML = "⚠️ Medium<br>" + time;
+    } 
+    else if (score === 3) {
+        fill.style.width = "75%";
+        fill.style.background = "yellow";
+        time = "ساعات";
+        text.innerHTML = "✅ Good<br>" + time;
+    } 
+    else {
+        fill.style.width = "100%";
+        fill.style.background = "lime";
+        time = "سنوات 🔥";
+        text.innerHTML = "🔥 Strong<br>" + time;
+    }
 }
+
+// 📄 Analyze PDF
+async function analyzePDF() {
+    const fileInput = document.getElementById("fileInput");
+    const result = document.getElementById("pdfResult");
+
+    if (!fileInput.files.length) {
+        result.innerHTML = "⚠️ اختر ملف أول";
+        return;
+    }
+
+    result.innerHTML = "⏳ جاري التحليل...";
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const res = await fetch("/analyze", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!res.ok) {
+            throw new Error("Server error");
+        }
+
+        const data = await res.json();
+
+        const emails = data.emails?.length || 0;
+        const urls = data.urls?.length || 0;
+        const ips = data.ips?.length || 0;
+
+        let risk = "Low";
+        if (ips > 0) risk = "High";
+        else if (urls > 0) risk = "Medium";
+
+        result.innerHTML = `
+        📄 Analysis<br><br>
+        📧 Emails: ${emails}<br>
+        🌐 URLs: ${urls}<br>
+        🌍 IPs: ${ips}<br>
+        🔐 Entropy: ${data.entropy}<br>
+        📏 Length: ${data.length}<br><br>
+        ⚠️ Risk: ${risk}
+        `;
+
+    } catch (error) {
+        result.innerHTML = "❌ خطأ في التحليل أو السيرفر";
+    }
+}
+
 </script>
 
 </body>
